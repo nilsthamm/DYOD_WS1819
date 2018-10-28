@@ -35,9 +35,7 @@ void Table::append(std::vector<AllTypeVariant> values) {
   _chunks.back()->append(values);
 }
 
-uint16_t Table::column_count() const {
-  return _column_types.size();
-}
+uint16_t Table::column_count() const { return _column_types.size(); }
 
 uint64_t Table::row_count() const {
   uint64_t count = 0;
@@ -47,9 +45,7 @@ uint64_t Table::row_count() const {
   return count;
 }
 
-ChunkID Table::chunk_count() const {
-  return static_cast<ChunkID>(_chunks.size());
-}
+ChunkID Table::chunk_count() const { return static_cast<ChunkID>(_chunks.size()); }
 
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
   auto const pos = std::find(_column_names.begin(), _column_names.end(), column_name);
@@ -60,33 +56,21 @@ ColumnID Table::column_id_by_name(const std::string& column_name) const {
   }
 }
 
-uint32_t Table::chunk_size() const {
-  return _chunk_size;
-}
+uint32_t Table::chunk_size() const { return _chunk_size; }
 
-const std::vector<std::string>& Table::column_names() const {
-  return _column_names;
-}
+const std::vector<std::string>& Table::column_names() const { return _column_names; }
 
-const std::string& Table::column_name(ColumnID column_id) const {
-  return _column_names[column_id];
-}
+const std::string& Table::column_name(ColumnID column_id) const { return _column_names[column_id]; }
 
-const std::string& Table::column_type(ColumnID column_id) const {
-  return _column_types[column_id];
-}
+const std::string& Table::column_type(ColumnID column_id) const { return _column_types[column_id]; }
 
-Chunk& Table::get_chunk(ChunkID chunk_id) {
-  return *_chunks[chunk_id];
-}
+Chunk& Table::get_chunk(ChunkID chunk_id) { return *_chunks[chunk_id]; }
 
-const Chunk& Table::get_chunk(ChunkID chunk_id) const {
-  return *_chunks[chunk_id];
-}
+const Chunk& Table::get_chunk(ChunkID chunk_id) const { return *_chunks[chunk_id]; }
 
 void Table::_add_chunk() {
   auto const new_chunk = std::make_shared<Chunk>();
-  for (auto const &type : _column_types) {
+  for (auto const& type : _column_types) {
     new_chunk->add_segment(make_shared_by_data_type<BaseSegment, ValueSegment>(type));
   }
   _chunks.push_back(new_chunk);
