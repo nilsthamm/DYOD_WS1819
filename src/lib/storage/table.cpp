@@ -50,7 +50,7 @@ ChunkID Table::chunk_count() const { return static_cast<ChunkID>(_chunks.size())
 ColumnID Table::column_id_by_name(const std::string& column_name) const {
   auto const pos = std::find(_column_names.begin(), _column_names.end(), column_name);
   if (pos == _column_names.end()) {
-    throw std::runtime_error("Implement Table::get_chunk");
+    throw std::runtime_error("Could not find table.");
   } else {
     return ColumnID(pos - _column_names.begin());
   }
