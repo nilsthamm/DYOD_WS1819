@@ -11,6 +11,7 @@
 #include "types.hpp"
 
 #include "../lib/storage/base_attribute_vector.hpp"
+#include "../lib/storage/value_segment.hpp"
 #include "../lib/type_cast.hpp"
 
 namespace opossum {
@@ -30,8 +31,28 @@ class DictionarySegment : public BaseSegment {
    * Creates a Dictionary segment from a given value segment.
    */
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
-    _dictionary = std::make_shared<std::vector<T>>();
-    _attribute_vector = std::make_shared<BaseAttributeVector>();
+    std::shared_ptr<ValueSegment<T>> pd = std::static_pointer_cast<ValueSegment<T>>(base_segment);
+    const auto& values = pd->values();
+
+    _dictionary = std::make_shared<std::vector<T>>(values.cbegin(), values.cend());
+
+    // Sort the actual values and remove duplicates
+    std::sort(_dictionary->begin(), _dictionary->end());
+    _dictionary->erase(
+      std::unique(_dictionary->begin(), _dictionary->end() ),
+      _dictionary->end());
+    _attribute_vector = std::make_shared<std::vector<uint32_t>>(base_segment->size());
+
+    // Find ID for each value with binary search.
+    // Since the _dictionary contains every value per definition, we don't have
+    // to check for non-found values.
+    for (ValueID index{0}; index < base_segment->size(); index++) {
+      auto it = std::lower_bound(
+          _dictionary->begin(),
+          _dictionary->end(),
+          values[index]);
+      (*_attribute_vector)[index] = std::distance(it, _dictionary->begin());
+    }
   }
 
   // SEMINAR INFORMATION: Since most of these methods depend on the template parameter, you will have to implement
@@ -44,7 +65,7 @@ class DictionarySegment : public BaseSegment {
 
   // return the value at a certain position.
   const T get(const size_t i) const {
-    return (*_dictionary)[i];
+    return (*_dictionary)[(*_attribute_vector)[i]];
   }
 
   // dictionary segments are immutable
@@ -109,7 +130,7 @@ class DictionarySegment : public BaseSegment {
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
-  std::shared_ptr<BaseAttributeVector> _attribute_vector;
+  std::shared_ptr<std::vector<uint32_t>> _attribute_vector;
 };
 
 }  // namespace opossum
