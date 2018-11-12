@@ -51,8 +51,8 @@ static std::shared_ptr<BaseAttributeVector> make_fitted_attribute_vector(size_t 
   } else if (dict_size <= std::numeric_limits<uint32_t>::max()) {
     return std::make_shared<FittedAttributeVector<uint32_t>>(segment_size);
   } else {
-    Fail("Dictionary is too large.");
-    return std::shared_ptr<BaseAttributeVector>(nullptr);
+    // we would use Fail, but the compiler complains that no value is returned
+    throw std::logic_error("Dictionary size is too large.");
   }
 }
 
