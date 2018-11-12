@@ -11,6 +11,7 @@
 #include "types.hpp"
 
 #include "../lib/storage/base_attribute_vector.hpp"
+#include "../lib/storage/fitted_attribute_vector.hpp"
 #include "../lib/storage/value_segment.hpp"
 #include "../lib/type_cast.hpp"
 
@@ -31,8 +32,8 @@ class DictionarySegment : public BaseSegment {
    * Creates a Dictionary segment from a given value segment.
    */
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
-    std::shared_ptr<ValueSegment<T>> pd = std::static_pointer_cast<ValueSegment<T>>(base_segment);
-    const auto& values = pd->values();
+    std::shared_ptr<ValueSegment<T>> value_segment = std::static_pointer_cast<ValueSegment<T>>(base_segment);
+    const auto& values = value_segment->values();
 
     _dictionary = std::make_shared<std::vector<T>>(values.cbegin(), values.cend());
 
@@ -41,7 +42,9 @@ class DictionarySegment : public BaseSegment {
     _dictionary->erase(
       std::unique(_dictionary->begin(), _dictionary->end() ),
       _dictionary->end());
-    _attribute_vector = std::make_shared<std::vector<uint32_t>>(base_segment->size());
+    _dictionary->shrink_to_fit();
+
+    _attribute_vector = make_fitted_attribute_vector(_dictionary->size(), base_segment->size());
 
     // Find ID for each value with binary search.
     // Since the _dictionary contains every value per definition, we don't have
@@ -51,7 +54,8 @@ class DictionarySegment : public BaseSegment {
           _dictionary->begin(),
           _dictionary->end(),
           values[index]);
-      (*_attribute_vector)[index] = std::distance(it, _dictionary->begin());
+      ValueID position = static_cast<ValueID>(std::distance(_dictionary->begin(), it));
+      _attribute_vector->set(index, position);
     }
   }
 
@@ -65,7 +69,7 @@ class DictionarySegment : public BaseSegment {
 
   // return the value at a certain position.
   const T get(const size_t i) const {
-    return (*_dictionary)[(*_attribute_vector)[i]];
+    return (*_dictionary)[_attribute_vector->get(i)];
   }
 
   // dictionary segments are immutable
@@ -130,7 +134,7 @@ class DictionarySegment : public BaseSegment {
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;
-  std::shared_ptr<std::vector<uint32_t>> _attribute_vector;
+  std::shared_ptr<BaseAttributeVector> _attribute_vector;
 };
 
 }  // namespace opossum
