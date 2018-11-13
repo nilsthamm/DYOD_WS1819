@@ -37,16 +37,12 @@ class DictionarySegment : public BaseSegment {
 
     _dictionary = std::make_shared<std::vector<T>>(values.cbegin(), values.cend());
 
-    // Sort the actual values and remove duplicates
     std::sort(_dictionary->begin(), _dictionary->end());
     _dictionary->erase(std::unique(_dictionary->begin(), _dictionary->end()), _dictionary->end());
     _dictionary->shrink_to_fit();
 
     _attribute_vector = make_fitted_attribute_vector(_dictionary->size(), base_segment->size());
 
-    // Find ID for each value with binary search.
-    // Since the _dictionary contains every value per definition, we don't have
-    // to check for non-found values.
     for (ValueID index{0}; index < base_segment->size(); index++) {
       const auto it = std::lower_bound(_dictionary->cbegin(), _dictionary->cend(), values[index]);
       DebugAssert(it != _dictionary->cend(), "Value must be contained in dictionary.");

@@ -4,11 +4,7 @@
 #include "../base_test.hpp"
 #include "gtest/gtest.h"
 
-#include "../../lib/resolve_type.hpp"
-#include "../../lib/storage/base_segment.hpp"
-#include "../../lib/storage/dictionary_segment.hpp"
 #include "../../lib/storage/fitted_attribute_vector.hpp"
-#include "../../lib/storage/value_segment.hpp"
 
 class StorageFittedAttributeVectorTest : public ::testing::Test {};
 
