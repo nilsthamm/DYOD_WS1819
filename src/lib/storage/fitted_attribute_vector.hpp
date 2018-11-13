@@ -9,7 +9,7 @@
 
 namespace opossum {
 
-// An AttributeVector that can adopt to the number of items in the dictionary
+// An AttributeVector that can adapt its internal member size to the number of items in the dictionary
 template <typename T>
 class FittedAttributeVector : public BaseAttributeVector {
  public:
