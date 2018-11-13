@@ -10,10 +10,10 @@
 #include "../../lib/storage/fitted_attribute_vector.hpp"
 #include "../../lib/storage/value_segment.hpp"
 
-class FittedAttributeVectorTest : public ::testing::Test {
+class StorageFittedAttributeVectorTest : public ::testing::Test {
 };
 
-TEST_F(FittedAttributeVectorTest, SetGet) {
+TEST_F(StorageFittedAttributeVectorTest, SetGet) {
   opossum::FittedAttributeVector<uint8_t> fitted_vector_uint8(1);
   opossum::FittedAttributeVector<uint16_t> fitted_vector_uint16(1);
   opossum::FittedAttributeVector<uint32_t> fitted_vector_uint32(1);
@@ -27,7 +27,7 @@ TEST_F(FittedAttributeVectorTest, SetGet) {
   EXPECT_EQ(fitted_vector_uint8.get(0), opossum::ValueID{255});
 }
 
-TEST_F(FittedAttributeVectorTest, Width) {
+TEST_F(StorageFittedAttributeVectorTest, Width) {
   opossum::FittedAttributeVector<uint8_t> fitted_vector_uint8(1);
   opossum::FittedAttributeVector<uint16_t> fitted_vector_uint16(1);
   opossum::FittedAttributeVector<uint32_t> fitted_vector_uint32(1);
@@ -37,7 +37,7 @@ TEST_F(FittedAttributeVectorTest, Width) {
   EXPECT_EQ(fitted_vector_uint32.width(), 4);
 }
 
-TEST_F(FittedAttributeVectorTest, MakeFittedHelper) {
+TEST_F(StorageFittedAttributeVectorTest, MakeFittedHelper) {
   auto fitted_vector_uint8_1 = opossum::make_fitted_attribute_vector(1, 1);
   auto fitted_vector_uint8_2 = opossum::make_fitted_attribute_vector(255, 1);
   auto fitted_vector_uint16_1 = opossum::make_fitted_attribute_vector(256, 1);

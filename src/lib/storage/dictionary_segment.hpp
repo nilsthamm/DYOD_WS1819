@@ -9,6 +9,8 @@
 
 #include "all_type_variant.hpp"
 #include "types.hpp"
+#include "utils/performance_warning.hpp"
+
 
 #include "../lib/storage/base_attribute_vector.hpp"
 #include "../lib/storage/fitted_attribute_vector.hpp"
