@@ -33,8 +33,7 @@ class DictionarySegment : public BaseSegment {
    * Creates a Dictionary segment from a given value segment.
    */
   explicit DictionarySegment(const std::shared_ptr<BaseSegment>& base_segment) {
-    std::shared_ptr<ValueSegment<T>> value_segment = std::static_pointer_cast<ValueSegment<T>>(base_segment);
-    const auto& values = value_segment->values();
+    const auto& values = std::static_pointer_cast<ValueSegment<T>>(base_segment)->values();
 
     _dictionary = std::make_shared<std::vector<T>>(values.cbegin(), values.cend());
 
@@ -49,9 +48,9 @@ class DictionarySegment : public BaseSegment {
     // Since the _dictionary contains every value per definition, we don't have
     // to check for non-found values.
     for (ValueID index{0}; index < base_segment->size(); index++) {
-      auto it = std::lower_bound(_dictionary->begin(), _dictionary->end(), values[index]);
-      DebugAssert(it != _dictionary->end(), "Value must be contained in dictionary.");
-      ValueID position = static_cast<ValueID>(std::distance(_dictionary->begin(), it));
+      const auto it = std::lower_bound(_dictionary->cbegin(), _dictionary->cend(), values[index]);
+      DebugAssert(it != _dictionary->cend(), "Value must be contained in dictionary.");
+      ValueID position = static_cast<ValueID>(std::distance(_dictionary->cbegin(), it));
       _attribute_vector->set(index, position);
     }
   }
@@ -84,11 +83,11 @@ class DictionarySegment : public BaseSegment {
   // returns the first value ID that refers to a value >= the search value
   // returns INVALID_VALUE_ID if all values are smaller than the search value
   ValueID lower_bound(T value) const {
-    auto bound = std::lower_bound(_dictionary->cbegin(), _dictionary->cend(), value);
-    if (bound == _dictionary->end()) {
+    const auto bound = std::lower_bound(_dictionary->cbegin(), _dictionary->cend(), value);
+    if (bound == _dictionary->cend()) {
       return INVALID_VALUE_ID;
     }
-    return ValueID{static_cast<ValueID>(std::distance(_dictionary->cbegin(), bound))};
+    return static_cast<ValueID>(std::distance(_dictionary->cbegin(), bound));
   }
 
   // same as lower_bound(T), but accepts an AllTypeVariant
@@ -97,11 +96,11 @@ class DictionarySegment : public BaseSegment {
   // returns the first value ID that refers to a value > the search value
   // returns INVALID_VALUE_ID if all values are smaller than or equal to the search value
   ValueID upper_bound(T value) const {
-    auto bound = std::upper_bound(_dictionary->cbegin(), _dictionary->cend(), value);
-    if (bound == _dictionary->end()) {
+    const auto bound = std::upper_bound(_dictionary->cbegin(), _dictionary->cend(), value);
+    if (bound == _dictionary->cend()) {
       return INVALID_VALUE_ID;
     }
-    return ValueID{static_cast<ValueID>(std::distance(_dictionary->cbegin(), bound))};
+    return static_cast<ValueID>(std::distance(_dictionary->cbegin(), bound));
   }
 
   // same as upper_bound(T), but accepts an AllTypeVariant
