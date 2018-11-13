@@ -54,4 +54,21 @@ TEST_F(StorageDictionarySegmentTest, LowerUpperBound) {
   EXPECT_EQ(dict_col->upper_bound(15), opossum::INVALID_VALUE_ID);
 }
 
-// TODO(student): You should add some more tests here (full coverage would be appreciated) and possibly in other files.
+TEST_F(StorageDictionarySegmentTest, GetAndBracketOperator) {
+  for (int i = 0; i <= 10; i += 2) vc_int->append(i);
+  auto col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
+  auto dict_col = std::dynamic_pointer_cast<opossum::DictionarySegment<int>>(col);
+
+  EXPECT_EQ(dict_col->get(0), 0);
+  EXPECT_EQ((*dict_col)[0], opossum::AllTypeVariant{0});
+
+  EXPECT_EQ(dict_col->get(1), 2);
+  EXPECT_EQ((*dict_col)[1], opossum::AllTypeVariant{2});
+}
+
+TEST_F(StorageDictionarySegmentTest, Append) {
+  auto col = opossum::make_shared_by_data_type<opossum::BaseSegment, opossum::DictionarySegment>("int", vc_int);
+
+  EXPECT_THROW(col->append(opossum::AllTypeVariant{0}), std::exception);
+}
+

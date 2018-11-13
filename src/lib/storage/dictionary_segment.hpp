@@ -54,6 +54,7 @@ class DictionarySegment : public BaseSegment {
           _dictionary->begin(),
           _dictionary->end(),
           values[index]);
+      DebugAssert(it != _dictionary->end(), "Value must be contained in dictionary.");
       ValueID position = static_cast<ValueID>(std::distance(_dictionary->begin(), it));
       _attribute_vector->set(index, position);
     }

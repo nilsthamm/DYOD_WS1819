@@ -43,12 +43,12 @@ class FittedAttributeVector : public BaseAttributeVector {
   std::vector<T> _attribute_vector;
 };
 
-static std::shared_ptr<BaseAttributeVector> make_fitted_attribute_vector(size_t dict_size, size_t segment_size) {
-  if (dict_size <= std::numeric_limits<uint8_t>::max()) {
+static std::shared_ptr<BaseAttributeVector> make_fitted_attribute_vector(size_t dictionary_size, size_t segment_size) {
+  if (dictionary_size <= std::numeric_limits<uint8_t>::max()) {
     return std::make_shared<FittedAttributeVector<uint8_t>>(segment_size);
-  } else if (dict_size <= std::numeric_limits<uint16_t>::max()) {
+  } else if (dictionary_size <= std::numeric_limits<uint16_t>::max()) {
     return std::make_shared<FittedAttributeVector<uint16_t>>(segment_size);
-  } else if (dict_size <= std::numeric_limits<uint32_t>::max()) {
+  } else if (dictionary_size <= std::numeric_limits<uint32_t>::max()) {
     return std::make_shared<FittedAttributeVector<uint32_t>>(segment_size);
   } else {
     // we would use Fail, but the compiler complains that no value is returned
