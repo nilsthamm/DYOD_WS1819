@@ -50,5 +50,5 @@ TEST_F(StorageFittedAttributeVectorTest, MakeFittedHelper) {
   EXPECT_EQ(fitted_vector_uint16_2->width(), 2);
   EXPECT_EQ(fitted_vector_uint32_1->width(), 4);
   EXPECT_EQ(fitted_vector_uint32_2->width(), 4);
-  EXPECT_THROW(opossum::make_fitted_attribute_vector(4294967296, opossum::ValueID{1}), std::exception);
+  EXPECT_THROW(opossum::make_fitted_attribute_vector(4294967296, 1), std::exception);
 }
