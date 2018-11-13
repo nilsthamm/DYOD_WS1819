@@ -27,17 +27,6 @@ class FittedAttributeVector : public BaseAttributeVector {
   std::vector<T> _attribute_vector;
 };
 
-std::shared_ptr<BaseAttributeVector> make_fitted_attribute_vector(size_t dictionary_size, size_t segment_size) {
-  if (dictionary_size <= std::numeric_limits<uint8_t>::max()) {
-    return std::make_shared<FittedAttributeVector<uint8_t>>(segment_size);
-  } else if (dictionary_size <= std::numeric_limits<uint16_t>::max()) {
-    return std::make_shared<FittedAttributeVector<uint16_t>>(segment_size);
-  } else if (dictionary_size <= std::numeric_limits<uint32_t>::max()) {
-    return std::make_shared<FittedAttributeVector<uint32_t>>(segment_size);
-  } else {
-    // we would use Fail, but the compiler complains that no value is returned
-    throw std::logic_error("Dictionary size is too large.");
-  }
-}
+std::shared_ptr<BaseAttributeVector> make_fitted_attribute_vector(size_t dictionary_size, size_t segment_size);
 
 }  // namespace opossum

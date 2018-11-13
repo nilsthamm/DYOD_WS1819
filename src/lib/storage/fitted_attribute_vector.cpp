@@ -6,6 +6,7 @@
 
 #include "utils/assert.hpp"
 
+
 namespace opossum {
 
 template <typename T>
@@ -25,5 +26,16 @@ size_t FittedAttributeVector<T>::size() const { return _attribute_vector.size();
 
 template <typename T>
 AttributeVectorWidth FittedAttributeVector<T>::width() const { return AttributeVectorWidth{sizeof(T)}; }
+
+std::shared_ptr<BaseAttributeVector> make_fitted_attribute_vector(size_t dictionary_size, size_t segment_size) {
+  Assert(dictionary_size <= std::numeric_limits<uint32_t>::max(), "Dictionary size is too large.");
+  if (dictionary_size <= std::numeric_limits<uint8_t>::max()) {
+    return std::make_shared<FittedAttributeVector<uint8_t>>(segment_size);
+  } else if (dictionary_size <= std::numeric_limits<uint16_t>::max()) {
+    return std::make_shared<FittedAttributeVector<uint16_t>>(segment_size);
+  } else {
+    return std::make_shared<FittedAttributeVector<uint32_t>>(segment_size);
+  }
+}
 
 }  // namespace opossum
