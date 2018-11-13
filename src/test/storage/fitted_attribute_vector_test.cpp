@@ -10,8 +10,7 @@
 #include "../../lib/storage/fitted_attribute_vector.hpp"
 #include "../../lib/storage/value_segment.hpp"
 
-class StorageFittedAttributeVectorTest : public ::testing::Test {
-};
+class StorageFittedAttributeVectorTest : public ::testing::Test {};
 
 TEST_F(StorageFittedAttributeVectorTest, SetGet) {
   opossum::FittedAttributeVector<uint8_t> fitted_vector_uint8(1);
@@ -53,4 +52,3 @@ TEST_F(StorageFittedAttributeVectorTest, MakeFittedHelper) {
   EXPECT_EQ(fitted_vector_uint32_2->width(), 4);
   EXPECT_THROW(opossum::make_fitted_attribute_vector(4294967296, opossum::ValueID{1}), std::exception);
 }
-

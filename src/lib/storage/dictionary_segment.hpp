@@ -11,7 +11,6 @@
 #include "types.hpp"
 #include "utils/performance_warning.hpp"
 
-
 #include "../lib/storage/base_attribute_vector.hpp"
 #include "../lib/storage/fitted_attribute_vector.hpp"
 #include "../lib/storage/value_segment.hpp"
@@ -41,9 +40,7 @@ class DictionarySegment : public BaseSegment {
 
     // Sort the actual values and remove duplicates
     std::sort(_dictionary->begin(), _dictionary->end());
-    _dictionary->erase(
-      std::unique(_dictionary->begin(), _dictionary->end() ),
-      _dictionary->end());
+    _dictionary->erase(std::unique(_dictionary->begin(), _dictionary->end()), _dictionary->end());
     _dictionary->shrink_to_fit();
 
     _attribute_vector = make_fitted_attribute_vector(_dictionary->size(), base_segment->size());
@@ -52,10 +49,7 @@ class DictionarySegment : public BaseSegment {
     // Since the _dictionary contains every value per definition, we don't have
     // to check for non-found values.
     for (ValueID index{0}; index < base_segment->size(); index++) {
-      auto it = std::lower_bound(
-          _dictionary->begin(),
-          _dictionary->end(),
-          values[index]);
+      auto it = std::lower_bound(_dictionary->begin(), _dictionary->end(), values[index]);
       DebugAssert(it != _dictionary->end(), "Value must be contained in dictionary.");
       ValueID position = static_cast<ValueID>(std::distance(_dictionary->begin(), it));
       _attribute_vector->set(index, position);
@@ -73,29 +67,19 @@ class DictionarySegment : public BaseSegment {
   }
 
   // return the value at a certain position.
-  const T get(const size_t i) const {
-    return (*_dictionary)[_attribute_vector->get(i)];
-  }
+  const T get(const size_t i) const { return (*_dictionary)[_attribute_vector->get(i)]; }
 
   // dictionary segments are immutable
-  void append(const AllTypeVariant&) override {
-    Fail("DictionarySegment is immutable.");
-  }
+  void append(const AllTypeVariant&) override { Fail("DictionarySegment is immutable."); }
 
   // returns an underlying dictionary
-  std::shared_ptr<const std::vector<T>> dictionary() const {
-    return _dictionary;
-  }
+  std::shared_ptr<const std::vector<T>> dictionary() const { return _dictionary; }
 
   // returns an underlying data structure
-  std::shared_ptr<const BaseAttributeVector> attribute_vector() const {
-    return _attribute_vector;
-  }
+  std::shared_ptr<const BaseAttributeVector> attribute_vector() const { return _attribute_vector; }
 
   // return the value represented by a given ValueID
-  const T& value_by_value_id(ValueID value_id) const {
-    return _dictionary[value_id];
-  }
+  const T& value_by_value_id(ValueID value_id) const { return _dictionary[value_id]; }
 
   // returns the first value ID that refers to a value >= the search value
   // returns INVALID_VALUE_ID if all values are smaller than the search value
@@ -108,9 +92,7 @@ class DictionarySegment : public BaseSegment {
   }
 
   // same as lower_bound(T), but accepts an AllTypeVariant
-  ValueID lower_bound(const AllTypeVariant& value) const {
-    return lower_bound(type_cast<T>(value));
-  }
+  ValueID lower_bound(const AllTypeVariant& value) const { return lower_bound(type_cast<T>(value)); }
 
   // returns the first value ID that refers to a value > the search value
   // returns INVALID_VALUE_ID if all values are smaller than or equal to the search value
@@ -123,19 +105,13 @@ class DictionarySegment : public BaseSegment {
   }
 
   // same as upper_bound(T), but accepts an AllTypeVariant
-  ValueID upper_bound(const AllTypeVariant& value) const {
-    return upper_bound(type_cast<T>(value));
-  }
+  ValueID upper_bound(const AllTypeVariant& value) const { return upper_bound(type_cast<T>(value)); }
 
   // return the number of unique_values (dictionary entries)
-  size_t unique_values_count() const {
-    return _dictionary->size();
-  }
+  size_t unique_values_count() const { return _dictionary->size(); }
 
   // return the number of entries
-  size_t size() const override {
-    return _attribute_vector->size();
-  }
+  size_t size() const override { return _attribute_vector->size(); }
 
  protected:
   std::shared_ptr<std::vector<T>> _dictionary;

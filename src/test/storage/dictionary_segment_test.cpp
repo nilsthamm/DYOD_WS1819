@@ -71,4 +71,3 @@ TEST_F(StorageDictionarySegmentTest, Append) {
 
   EXPECT_THROW(col->append(opossum::AllTypeVariant{0}), std::exception);
 }
-
