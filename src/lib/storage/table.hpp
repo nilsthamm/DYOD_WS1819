@@ -1,5 +1,7 @@
 #pragma once
 
+#include <shared_mutex>
+
 #include <limits>
 #include <map>
 #include <memory>
@@ -87,5 +89,6 @@ class Table : private Noncopyable {
 
  private:
   void _add_chunk();
+  mutable std::shared_mutex _mutex_chunk_access;
 };
 }  // namespace opossum

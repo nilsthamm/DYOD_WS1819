@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "dictionary_segment.hpp"
 #include "value_segment.hpp"
 
 #include "resolve_type.hpp"
@@ -64,9 +65,15 @@ const std::string& Table::column_name(ColumnID column_id) const { return _column
 
 const std::string& Table::column_type(ColumnID column_id) const { return _column_types[column_id]; }
 
-Chunk& Table::get_chunk(ChunkID chunk_id) { return *_chunks[chunk_id]; }
+Chunk& Table::get_chunk(ChunkID chunk_id) {
+  std::unique_lock<std::shared_mutex> lock(_mutex_chunk_access);
+  return *_chunks[chunk_id];
+}
 
-const Chunk& Table::get_chunk(ChunkID chunk_id) const { return *_chunks[chunk_id]; }
+const Chunk& Table::get_chunk(ChunkID chunk_id) const {
+  std::shared_lock<std::shared_mutex> lock(_mutex_chunk_access);
+  return *_chunks[chunk_id];
+}
 
 void Table::_add_chunk() {
   auto const new_chunk = std::make_shared<Chunk>();
@@ -76,6 +83,23 @@ void Table::_add_chunk() {
   _chunks.push_back(new_chunk);
 }
 
-void Table::compress_chunk(ChunkID chunk_id) { throw std::runtime_error("Implement Table::compress_chunk"); }
+void Table::compress_chunk(ChunkID chunk_id) {
+  Assert(chunk_id < _chunks.size(), "Chunk ID out of range");
+
+  const auto new_chunk = std::make_shared<Chunk>();
+
+  const auto& old_chunk = get_chunk(chunk_id);
+
+  Assert(old_chunk.size() == _chunk_size, "Chunk not full");
+
+  for (ColumnID column_id = ColumnID{0}; column_id < old_chunk.column_count(); ++column_id) {
+    const auto segment = old_chunk.get_segment(column_id);
+
+    new_chunk->add_segment(make_shared_by_data_type<BaseSegment, DictionarySegment>(column_type(column_id), segment));
+  }
+
+  std::unique_lock<std::shared_mutex> lock(_mutex_chunk_access);
+  _chunks[chunk_id] = new_chunk;
+}
 
 }  // namespace opossum
