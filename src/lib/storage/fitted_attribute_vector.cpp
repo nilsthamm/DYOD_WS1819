@@ -2,7 +2,6 @@
 
 #include <limits>
 #include <memory>
-#include <vector>
 
 #include "utils/assert.hpp"
 
@@ -17,8 +16,8 @@ ValueID FittedAttributeVector<T>::get(const size_t i) const { return ValueID{_at
 
 template <typename T>
 void FittedAttributeVector<T>::set(const size_t i, const ValueID value_id) {
-	DebugAssert(value_id <= ValueID{std::numeric_limits<T>::max()}, "ValueID must fit within templated type.");
-	_attribute_vector[i] = value_id;
+  DebugAssert(value_id <= ValueID{std::numeric_limits<T>::max()}, "ValueID must fit within templated type.");
+  _attribute_vector[i] = value_id;
 }
 
 template <typename T>
