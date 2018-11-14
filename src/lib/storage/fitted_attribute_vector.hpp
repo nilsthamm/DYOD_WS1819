@@ -1,5 +1,8 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "base_attribute_vector.hpp"
 #include "types.hpp"
 
@@ -10,7 +13,7 @@ template <typename T>
 class FittedAttributeVector : public BaseAttributeVector {
  public:
   explicit FittedAttributeVector(size_t size);
-  
+
   // returns the value id at a given position
   ValueID get(const size_t i) const;
 

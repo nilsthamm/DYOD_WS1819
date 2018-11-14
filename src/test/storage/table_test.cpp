@@ -9,6 +9,7 @@
 
 #include "../lib/resolve_type.hpp"
 #include "../lib/storage/table.hpp"
+#include "../lib/storage/dictionary_segment.hpp"
 
 namespace opossum {
 
@@ -70,5 +71,19 @@ TEST_F(StorageTableTest, GetColumnIdByName) {
 }
 
 TEST_F(StorageTableTest, GetChunkSize) { EXPECT_EQ(t.chunk_size(), 2u); }
+
+
+TEST_F(StorageTableTest, CompressChunk) {
+  t.append({4, "Hello,"});
+  t.append({6, "world"});
+  t.append({3, "!"});
+  t.compress_chunk(ChunkID{0});
+
+
+  EXPECT_EQ(type_cast<int>((*(t.get_chunk(ChunkID{0}).get_segment(ColumnID{0})))[0]), 4);
+  EXPECT_EQ(t.get_chunk(ChunkID{0}).size(), 2u);
+  EXPECT_TRUE(std::dynamic_pointer_cast<DictionarySegment<std::string>>(
+    t.get_chunk(ChunkID{0}).get_segment(ColumnID{1})));
+}
 
 }  // namespace opossum
