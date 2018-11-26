@@ -7,7 +7,7 @@
 namespace opossum {
   TableScan::TableScan(const std::shared_ptr<const AbstractOperator> in, ColumnID column_id, const ScanType scan_type,
             const AllTypeVariant search_value) : AbstractOperator(in), _column_id(column_id), _scan_type(scan_type), _search_value(search_value) {
-  	_table_scan_impl = make_unique_by_data_type<BaseTableScanImpl, TableScanImpl>(_input_table_left()->column_type(_column_id), _column_id, _scan_type, _search_value, _input_table_left());
+    _table_scan_impl = make_unique_by_data_type<BaseTableScanImpl, TableScanImpl>(_input_table_left()->column_type(_column_id), _column_id, _scan_type, _search_value, _input_table_left());
   }
 
   TableScan::~TableScan() = default;
@@ -17,7 +17,7 @@ namespace opossum {
   const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 
   std::shared_ptr<const Table> TableScan::_on_execute() { 
-  	throw std::logic_error("Not implemented yet");
+    throw std::logic_error("Not implemented yet");
   }
 
 } // namespace opossum

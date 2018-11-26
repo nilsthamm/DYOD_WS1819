@@ -41,37 +41,36 @@ class TableScan : public AbstractOperator {
   template<typename T>
   class TableScanImpl : public BaseTableScanImpl {
    public:
-  	TableScanImpl(ColumnID column_id, const ScanType scan_type,
+    TableScanImpl(ColumnID column_id, const ScanType scan_type,
             const AllTypeVariant search_value, std::shared_ptr<const Table> input_table ) : _column_id(column_id), _scan_type(scan_type), _search_value(type_cast<T>(search_value)), _input_table(input_table) {}
-	
-	std::shared_ptr<const Table> _on_execute() {
-  	  auto output_table = std::make_shared<Table>(_input_table->chunk_size());
-  	  auto pos_list = std::make_shared<PosList>();
+  
+  std::shared_ptr<const Table> _on_execute() {
+      auto output_table = std::make_shared<Table>(_input_table->chunk_size());
+      auto pos_list = std::make_shared<PosList>();
 
-  	  for (auto chunk_id = ChunkID{0}; chunk_id < _input_table->chunk_out(); ++chunk_id) {
-  	  	const auto& chunk = _input_table->get_chunk(chunk_id);
-  	    for (auto column_id = ColumnID{0}; column_id < _input_table->column_count(); column_id++) {
-	  	  // Scan value segment
+      for (auto chunk_id = ChunkID{0}; chunk_id < _input_table->chunk_out(); ++chunk_id) {
+        const auto& chunk = _input_table->get_chunk(chunk_id);
+        for (auto column_id = ColumnID{0}; column_id < _input_table->column_count(); column_id++) {
+        // Scan value segment
 
-	  	  // Scan reference segment
+        // Scan reference segment
+          
 
-	  	  // Scan dictionary segment
+        // Scan dictionary segment
 
+        }
+      }
+    // Create table structure
 
-
-  	  	}
-  	  }
-	  // Create table structure
-
-  	  return output_table;
-  	}
+      return output_table;
+    }
 
 
    protected:
-	ColumnID _column_id;
-	ScanType _scan_type;
-	T _search_value;
-	std::shared_ptr<const Table> _input_table;
+  ColumnID _column_id;
+  ScanType _scan_type;
+  T _search_value;
+  std::shared_ptr<const Table> _input_table;
 
   };
 
