@@ -15,9 +15,14 @@
 
 namespace opossum {
 
-class BaseTableScanImpl {
-};
 class Table;
+
+class BaseTableScanImpl {
+public:
+  virtual ~BaseTableScanImpl() {}
+
+  virtual std::shared_ptr<const Table> _on_execute() const = 0;
+};
 
 class TableScan : public AbstractOperator {
  public:
@@ -45,30 +50,31 @@ class TableScan : public AbstractOperator {
     TableScanImpl(ColumnID column_id, const ScanType scan_type,
             const AllTypeVariant search_value, std::shared_ptr<const Table> input_table ) : _column_id(column_id), _scan_type(scan_type), _search_value(type_cast<T>(search_value)), _input_table(input_table) {}
     
-    auto compare_lambda(ScanType comp) {
+    const std::function<bool(const T&)> compare_lambda(ScanType comp) const {
       switch(_scan_type) {
         case ScanType::OpEquals:
-          return [=](const T& value) { return _search_value == value; };
+          return [=](const T& value) -> bool { return _search_value == value; };
         case ScanType::OpNotEquals:
-          return [=](const T& value) { return _search_value != value; };
+          return [=](const T& value) -> bool { return _search_value != value; };
         case ScanType::OpLessThan:
-          return [=](const T& value) { return _search_value < value; };
+          return [=](const T& value) -> bool { return _search_value < value; };
         case ScanType::OpLessThanEquals:
-          return [=](const T& value) { return _search_value <= value; };
+          return [=](const T& value) -> bool { return _search_value <= value; };
         case ScanType::OpGreaterThan:
-          return [=](const T& value) { return _search_value > value; };
+          return [=](const T& value) -> bool { return _search_value > value; };
         case ScanType::OpGreaterThanEquals:
-          return [=](const T& value) { return _search_value >= value; };
+          return [=](const T& value) -> bool { return _search_value >= value; };
         default:
           Fail("Unreconized ScanType");
+          // compiler complains that nothing is returned otherwise
+          return [=](const T& value) -> bool { return false; };
       }
     }
 
-
-    std::shared_ptr<const Table> _on_execute() {
+    std::shared_ptr<const Table> _on_execute() const override {
       auto output_table = std::make_shared<Table>(_input_table->chunk_size());
       auto pos_list = std::make_shared<PosList>();
-      const auto comapre = compare_lambda(_scan_type); 
+      const auto compare = compare_lambda(_scan_type); 
 
       ValueID offset{0};
       for (auto chunk_id = ChunkID{0}; chunk_id < _input_table->chunk_count(); ++chunk_id) {
@@ -97,15 +103,14 @@ class TableScan : public AbstractOperator {
 
           std::vector<bool> contained_values(chunk.size(), false);
           for (size_t index = 0; index < contained_values.size(); ++index) {
-            bool contained = false;
-            // TODO perform comparation!
-            contained_values[index] = contained;
+            contained_values[index] = compare((*dictionary)[index]);
           }
 
           for (size_t index = 0; index < attribute_vector->size(); ++index) {
             ValueID value_id = attribute_vector->get(index);
             if (contained_values[value_id]) {
-              pos_list->emplace_back(offset + value_id);
+              // TODO proper entry in pos list
+              //pos_list->emplace_back(offset + value_id);
             }
           }
         }

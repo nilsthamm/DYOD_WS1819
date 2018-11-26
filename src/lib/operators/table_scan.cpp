@@ -17,7 +17,7 @@ namespace opossum {
   const AllTypeVariant& TableScan::search_value() const { return _search_value; }
 
   std::shared_ptr<const Table> TableScan::_on_execute() { 
-    throw std::logic_error("Not implemented yet");
+    return _table_scan_impl->_on_execute();
   }
 
 } // namespace opossum
