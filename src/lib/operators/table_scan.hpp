@@ -48,14 +48,20 @@ class TableScan : public AbstractOperator {
   	  auto output_table = std::make_shared<Table>(_input_table->chunk_size());
   	  auto pos_list = std::make_shared<PosList>();
 
-  	  // Scan value segment
+  	  for (auto chunk_id = ChunkID{0}; chunk_id < _input_table->chunk_out(); ++chunk_id) {
+  	  	const auto& chunk = _input_table->get_chunk(chunk_id);
+  	    for (auto column_id = ColumnID{0}; column_id < _input_table->column_count(); column_id++) {
+	  	  // Scan value segment
 
-  	  // Scan reference segment
+	  	  // Scan reference segment
 
-  	  // Scan dictionary segment
+	  	  // Scan dictionary segment
 
 
-  	  // Create table structure
+
+  	  	}
+  	  }
+	  // Create table structure
 
   	  return output_table;
   	}
