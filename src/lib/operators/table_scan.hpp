@@ -43,10 +43,31 @@ class TableScan : public AbstractOperator {
    public:
     TableScanImpl(ColumnID column_id, const ScanType scan_type,
             const AllTypeVariant search_value, std::shared_ptr<const Table> input_table ) : _column_id(column_id), _scan_type(scan_type), _search_value(type_cast<T>(search_value)), _input_table(input_table) {}
-  
+    
+    auto compare_lambda(ScanType comp) {
+      switch(_scan_type) {
+        case ScanType::OpEquals:
+          return [=](const T& value) { return _search_value == value; };
+        case ScanType::OpNotEquals:
+          return [=](const T& value) { return _search_value != value; };
+        case ScanType::OpLessThan:
+          return [=](const T& value) { return _search_value < value; };
+        case ScanType::OpLessThanEquals:
+          return [=](const T& value) { return _search_value <= value; };
+        case ScanType::OpGreaterThan:
+          return [=](const T& value) { return _search_value > value; };
+        case ScanType::OpGreaterThanEquals:
+          return [=](const T& value) { return _search_value >= value; };
+        default:
+          Fail("Unreconized ScanType");
+      }
+    }
+
+
     std::shared_ptr<const Table> _on_execute() {
       auto output_table = std::make_shared<Table>(_input_table->chunk_size());
       auto pos_list = std::make_shared<PosList>();
+      const auto comapre = compare_lambda(_scan_type); 
 
       for (auto chunk_id = ChunkID{0}; chunk_id < _input_table->chunk_count(); ++chunk_id) {
         // const auto& chunk = _input_table->get_chunk(chunk_id);
@@ -54,12 +75,18 @@ class TableScan : public AbstractOperator {
         // Scan value segment
 
         // Scan reference segment
-          // if(auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(chunk.get_segment(column_id))) {
+          // if(auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(chunk.get_segment(_column_id))) {
           //   const auto referenced_pos_list = reference_segment->pos_list();
           //   const auto reference_table = reference_segment->reference_table();
 
           //   for (const auto row_id : referenced_pos_list) {
+          //     if(auto value_segment = std::dynamic_pointer_cast<ValueSegment>(reference_table->get_chunk(row_id.chunk_id).get_segment(_column_id))) {
+          //       if()
+          //     } else if(auto dictionary = std::dynamic_pointer_cast<DictionarySegment>(reference_table->get_chunk(row_id.chunk_id).get_segment(_column_id))) {
 
+          //     } else {
+          //       Fail("Column type could not be reconized");
+          //     }
           //   }
           // }
 
@@ -74,10 +101,10 @@ class TableScan : public AbstractOperator {
 
 
    protected:
-  ColumnID _column_id;
-  ScanType _scan_type;
-  T _search_value;
-  std::shared_ptr<const Table> _input_table;
+    ColumnID _column_id;
+    ScanType _scan_type;
+    T _search_value;
+    std::shared_ptr<const Table> _input_table;
 
   };
 
