@@ -56,17 +56,17 @@ class TableScan : public AbstractOperator {
     const std::function<bool(const T&)> compare_lambda(ScanType comp) const {
       switch(_scan_type) {
         case ScanType::OpEquals:
-          return [=](const T& value) -> bool { return _search_value == value; };
+          return [=](const T& value) -> bool { return value == _search_value; };
         case ScanType::OpNotEquals:
-          return [=](const T& value) -> bool { return _search_value != value; };
+          return [=](const T& value) -> bool { return value != _search_value; };
         case ScanType::OpLessThan:
-          return [=](const T& value) -> bool { return _search_value < value; };
+          return [=](const T& value) -> bool { return value < _search_value; };
         case ScanType::OpLessThanEquals:
-          return [=](const T& value) -> bool { return _search_value <= value; };
+          return [=](const T& value) -> bool { return value <= _search_value; };
         case ScanType::OpGreaterThan:
-          return [=](const T& value) -> bool { return _search_value > value; };
+          return [=](const T& value) -> bool { return value > _search_value; };
         case ScanType::OpGreaterThanEquals:
-          return [=](const T& value) -> bool { return _search_value >= value; };
+          return [=](const T& value) -> bool { return value >= _search_value; };
         default:
           Fail("Unreconized ScanType");
           // compiler complains that nothing is returned otherwise
@@ -83,6 +83,10 @@ class TableScan : public AbstractOperator {
       ValueID offset{0};
       for (auto chunk_id = ChunkID{0}; chunk_id < _input_table->chunk_count(); ++chunk_id) {
         const auto& chunk = _input_table->get_chunk(chunk_id);
+
+        if(chunk.size() == 0) {
+          continue;
+        }
 
         // Scan value segment
         if (const auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(chunk.get_segment(_column_id))) {
@@ -122,6 +126,7 @@ class TableScan : public AbstractOperator {
 
           std::vector<bool> contained_values(chunk.size(), false);
           for (ChunkOffset index = 0; index < contained_values.size(); ++index) {
+            // TODO optimize
             contained_values[index] = compare((*dictionary)[index]);
           }
 
