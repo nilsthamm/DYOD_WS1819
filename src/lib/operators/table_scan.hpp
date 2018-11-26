@@ -14,7 +14,8 @@
 
 namespace opossum {
 
-class BaseTableScanImpl;
+class BaseTableScanImpl {
+};
 class Table;
 
 class TableScan : public AbstractOperator {
@@ -38,13 +39,25 @@ class TableScan : public AbstractOperator {
   std::shared_ptr<const BaseTableScanImpl> _table_scan_impl;
 
   template<typename T>
-  class TableScanImpl {
+  class TableScanImpl : public BaseTableScanImpl {
    public:
-  	TableScanImpl(const std::shared_ptr<const AbstractOperator> in, ColumnID column_id, const ScanType scan_type,
-            const AllTypeVariant search_value) : _column_id(column_id), _scan_type(scan_type), _search_value(type_cast<T>(search_value)) {}
+  	TableScanImpl(ColumnID column_id, const ScanType scan_type,
+            const AllTypeVariant search_value, std::shared_ptr<const Table> input_table ) : _column_id(column_id), _scan_type(scan_type), _search_value(type_cast<T>(search_value)), _input_table(input_table) {}
 	
 	std::shared_ptr<const Table> _on_execute() {
-  	  throw std::logic_error("Not implemented yet");
+  	  auto output_table = std::make_shared<Table>(_input_table->chunk_size());
+  	  auto pos_list = std::make_shared<PosList>();
+
+  	  // Scan value segment
+
+  	  // Scan reference segment
+
+  	  // Scan dictionary segment
+
+
+  	  // Create table structure
+
+  	  return output_table;
   	}
 
 
@@ -52,6 +65,7 @@ class TableScan : public AbstractOperator {
 	ColumnID _column_id;
 	ScanType _scan_type;
 	T _search_value;
+	std::shared_ptr<const Table> _input_table;
 
   };
 
