@@ -25,10 +25,10 @@ public:
   virtual std::shared_ptr<const Table> on_execute() const = 0;
 };
 
-// Add all ValueIDs of an DictionarySegment's attribute vector that fulfill a specific condition (templated Comparator)
+// Add all ValueIDs of an DictionarySegment's attribute vector that fulfill a specific condition (templated Comparator, see dictionary segment scan part)
 // with the given search_pos to a PosList
 template <typename Compare>
-void add_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, ValueID search_pos) {
+void add_to_pos_list(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) {
   Compare compare = Compare();
   for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
     if (compare(attribute_vector->get(index), search_pos)) {
@@ -187,7 +187,7 @@ template<typename T>
     T _search_value;
     std::shared_ptr<const Table> _input_table;
 
-    const std::function<bool(const T&)> _compare_lambda(ScanType comp) const {
+    const std::function<bool(const T&)> _compare_lambda(const ScanType comp) const {
       switch(_scan_type) {
         case ScanType::OpEquals:
           return [=](const T& value) -> bool { return value == _search_value; };
