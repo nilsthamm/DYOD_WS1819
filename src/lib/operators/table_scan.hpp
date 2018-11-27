@@ -20,13 +20,6 @@ namespace opossum {
 
 class Table;
 
-class BaseTableScanImpl {
-public:
-  virtual ~BaseTableScanImpl() {}
-
-  virtual std::shared_ptr<const Table> _on_execute() const = 0;
-};
-
 class TableScan : public AbstractOperator {
  public:
   TableScan(const std::shared_ptr<const AbstractOperator> in, ColumnID column_id, const ScanType scan_type,
@@ -53,6 +46,7 @@ class TableScan : public AbstractOperator {
     TableScanImpl(ColumnID column_id, const ScanType scan_type,
             const AllTypeVariant search_value, std::shared_ptr<const Table> input_table ) : _column_id(column_id), _scan_type(scan_type), _search_value(type_cast<T>(search_value)), _input_table(input_table) {}
     
+    // Use a pre defined lambda to capsual the comparison logic from the actual scan procedure, since the scan_type and _search_value don't change
     const std::function<bool(const T&)> compare_lambda(ScanType comp) const {
       switch(_scan_type) {
         case ScanType::OpEquals:
@@ -78,6 +72,7 @@ class TableScan : public AbstractOperator {
       auto output_table = std::make_shared<Table>(_input_table->chunk_size());
       auto pos_list = std::make_shared<PosList>();
       const auto compare = compare_lambda(_scan_type);
+      // Defined here to be used later in the reference segment. If the input table itselfs contains reference segments, the variable is set to the source table
       std::shared_ptr<const Table> output_reference_table = _input_table;
 
       for (auto chunk_id = ChunkID{0}; chunk_id < _input_table->chunk_count(); ++chunk_id) {
@@ -90,6 +85,7 @@ class TableScan : public AbstractOperator {
         // Scan value segment
         if (const auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(chunk.get_segment(_column_id))) {
           const auto& values = value_segment->values();
+          // Iterating over the value vector from the value segment and comparing every value with the pre defined compare lambda
           for (ChunkOffset index = 0; index < values.size(); ++index) {
             if (compare(values[index])) {
               pos_list->emplace_back(RowID{chunk_id, index});
@@ -99,12 +95,14 @@ class TableScan : public AbstractOperator {
 
         // Scan reference segment
           if(auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(chunk.get_segment(_column_id))) {
+            // set the reference table for the output segments to the original source table
             output_reference_table = reference_segment->referenced_table();
             const auto referenced_pos_list = reference_segment->pos_list();
             const auto reference_table = reference_segment->referenced_table();
 
             for (uint32_t index = 0; index < referenced_pos_list->size(); index++) {
               const auto& row_id = (*referenced_pos_list)[index];
+              // Depending on the source segment type we need to get the value on different ways
               if(auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(reference_table->get_chunk(row_id.chunk_id).get_segment(_column_id))) {
                 if(compare(value_segment->values()[row_id.chunk_offset])) {
                   pos_list->emplace_back(row_id);
@@ -237,11 +235,13 @@ class TableScan : public AbstractOperator {
       }
 
       // Create table structure
-
+      // Therefor we fill the Chunk created at the initialization of the output table with 
+      // reference segments and add the column definitions manually to the table
       Chunk &output_chunk = output_table->get_chunk(ChunkID{0});
 
       for(ColumnID column_id = ColumnID{0}; column_id < _input_table->column_count(); column_id++) {
         output_table->add_column_definition(_input_table->column_name(column_id), _input_table->column_type(column_id));
+        // Every segment gets the same pos list and referenced table
         output_chunk.add_segment(std::make_shared<ReferenceSegment>(output_reference_table, column_id, pos_list));
       }
 
