@@ -103,6 +103,8 @@ template<typename T>
             case ScanType::OpEquals:
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
+                // If we find a lower bound candidate, and it is our _search_value,
+                // simply add all equal items of the attribute_vector. 
                 add_to_pos_list<std::equal_to<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
               }
               break;
@@ -110,8 +112,11 @@ template<typename T>
             case ScanType::OpNotEquals:
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
+                // If we find a lower bound candidate, and it is our _search_value,
+                // simply add all non-equal items of the attribute_vector. 
                 add_to_pos_list<std::not_equal_to<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
               } else {
+                // else our _search_value is not in the dictionary, so add all.
                 add_all_to_pos_list(pos_list, chunk_id, attribute_vector);
               }
               break;
@@ -119,8 +124,12 @@ template<typename T>
             case ScanType::OpLessThan:
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
+                // If we find a lower bound candidate, and it is our _search_value,
+                // add all smaller ValueIDs because of the closed interval.
                 add_to_pos_list<std::less<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
               } else if (dictionary->back() < _search_value) {
+                // else, we did not find a candidate, but the greatest value in our
+                // dictionary is smaller than our _search_value, so add all.
                 add_all_to_pos_list(pos_list, chunk_id, attribute_vector);
               }
               break;
@@ -128,12 +137,17 @@ template<typename T>
             case ScanType::OpLessThanEquals:
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID) {
+                // If we find a lower bound candidate,
                 if ((*dictionary)[search_pos] == _search_value) {
+                  // and if it is our _search_value, add all lesserequal ValueIDs because we want to include our value.
                   add_to_pos_list<std::less_equal<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
                 } else {
+                  // Else, we don't want to include the found value, because it is already larger.
                   add_to_pos_list<std::less<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
                 }
               } else if (dictionary->back() < _search_value) {
+                // If we did not find a candidate at all, but the greatest value in our
+                // dictionary is smaller than our _search_value, add all.
                 add_all_to_pos_list(pos_list, chunk_id, attribute_vector);
               }
               break;
@@ -142,9 +156,12 @@ template<typename T>
               search_pos = dictionary_segment->upper_bound(_search_value);
 
               if (search_pos != INVALID_VALUE_ID) {
+                // If we find a lower bound candidate,
                 if ((*dictionary)[search_pos] == _search_value) {
+                  // and if it is our _search_value, add all greater ValueIDs because we want to exclude our value.
                   add_to_pos_list<std::greater<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
                 } else {
+                  // Else, we do want to include the found value, because it is already larger.
                   add_to_pos_list<std::greater_equal<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
                 }
               }
@@ -153,6 +170,8 @@ template<typename T>
             case ScanType::OpGreaterThanEquals:
               search_pos = dictionary_segment->upper_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID) {
+                // If we find a lower bound candidate, and it is not the first element in the dictionary,
+                // we have to decrement the ValueID to include it. Then we can add all greater equal ValueIDs.
                 if (search_pos != ValueID{0}) {
                   search_pos--;
                 }
@@ -161,14 +180,14 @@ template<typename T>
               break;
 
             default:
-              Fail("Unreconized ScanType");
+              Fail("Unreconigzed ScanType");
           }
         }
       }
 
       // Create table structure
-      // Therefor we fill the Chunk created at the initialization of the output table with 
-      // reference segments and add the column definitions manually to the table
+      // We fill the Chunk created at the initialization of the output table with 
+      // ReferenceSegments and add the column definitions manually to the table.
       Chunk &output_chunk = output_table->get_chunk(ChunkID{0});
 
       for(ColumnID column_id = ColumnID{0}; column_id < _input_table->column_count(); column_id++) {
@@ -202,7 +221,7 @@ template<typename T>
         case ScanType::OpGreaterThanEquals:
           return [=](const T& value) -> bool { return value >= _search_value; };
         default:
-          Fail("Unreconized ScanType");
+          Fail("Unrecognized ScanType");
           // compiler complains that nothing is returned otherwise
           return [=](const T& value) -> bool { return false; };
       }
