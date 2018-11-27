@@ -25,6 +25,8 @@ public:
   virtual std::shared_ptr<const Table> on_execute() const = 0;
 };
 
+// Add all ValueIDs of an DictionarySegment's attribute vector that fulfill a specific condition (templated Comparator)
+// with the given search_pos to a PosList
 template <typename Compare>
 void add_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, ValueID search_pos) {
   Compare compare = Compare();
@@ -35,6 +37,7 @@ void add_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const 
   }
 }
 
+// Add all ValueIDs of an DictionarySegment's attribute vector to a PosList
 void add_all_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector);
 
 template<typename T>
@@ -42,33 +45,12 @@ template<typename T>
    public:
     TableScanImpl(ColumnID column_id, const ScanType scan_type,
             const AllTypeVariant search_value, std::shared_ptr<const Table> input_table ) : _column_id(column_id), _scan_type(scan_type), _search_value(type_cast<T>(search_value)), _input_table(input_table) {}
-    
-    // Use a pre defined lambda to encapsulate the comparison logic from the actual scan procedure, since the scan_type and _search_value don't change
-    const std::function<bool(const T&)> compare_lambda(ScanType comp) const {
-      switch(_scan_type) {
-        case ScanType::OpEquals:
-          return [=](const T& value) -> bool { return value == _search_value; };
-        case ScanType::OpNotEquals:
-          return [=](const T& value) -> bool { return value != _search_value; };
-        case ScanType::OpLessThan:
-          return [=](const T& value) -> bool { return value < _search_value; };
-        case ScanType::OpLessThanEquals:
-          return [=](const T& value) -> bool { return value <= _search_value; };
-        case ScanType::OpGreaterThan:
-          return [=](const T& value) -> bool { return value > _search_value; };
-        case ScanType::OpGreaterThanEquals:
-          return [=](const T& value) -> bool { return value >= _search_value; };
-        default:
-          Fail("Unreconigzed ScanType");
-          // Unnecessary, but the Compiler complains that nothing is returned otherwise.
-          return [=](const T& value) -> bool { return false; };
-      }
-    }
 
     std::shared_ptr<const Table> on_execute() const override {
       auto output_table = std::make_shared<Table>(_input_table->chunk_size());
       auto pos_list = std::make_shared<PosList>();
-      const auto compare = compare_lambda(_scan_type);
+      // Use a pre defined lambda to capsual the comparison logic from the actual scan procedure, since the scan_type and _search_value don't change
+      const auto compare = _compare_lambda(_scan_type);
       // Defined here to be used later in the reference segment. If the input table itselfs contains reference segments, the variable is set to the source table
       std::shared_ptr<const Table> output_reference_table = _input_table;
 
@@ -113,8 +95,8 @@ template<typename T>
         // Scan dictionary segment
         } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<T>>(chunk.get_segment(_column_id))) {
 
-          const auto& dictionary = dictionary_segment->dictionary();
-          const auto& attribute_vector = dictionary_segment->attribute_vector();
+          const auto dictionary = dictionary_segment->dictionary();
+          const auto attribute_vector = dictionary_segment->attribute_vector();
 
           ValueID search_pos;
           switch ( _scan_type ) {
@@ -223,6 +205,27 @@ template<typename T>
     ScanType _scan_type;
     T _search_value;
     std::shared_ptr<const Table> _input_table;
+
+    const std::function<bool(const T&)> _compare_lambda(ScanType comp) const {
+      switch(_scan_type) {
+        case ScanType::OpEquals:
+          return [=](const T& value) -> bool { return value == _search_value; };
+        case ScanType::OpNotEquals:
+          return [=](const T& value) -> bool { return value != _search_value; };
+        case ScanType::OpLessThan:
+          return [=](const T& value) -> bool { return value < _search_value; };
+        case ScanType::OpLessThanEquals:
+          return [=](const T& value) -> bool { return value <= _search_value; };
+        case ScanType::OpGreaterThan:
+          return [=](const T& value) -> bool { return value > _search_value; };
+        case ScanType::OpGreaterThanEquals:
+          return [=](const T& value) -> bool { return value >= _search_value; };
+        default:
+          Fail("Unrecognized ScanType");
+          // compiler complains that nothing is returned otherwise
+          return [=](const T& value) -> bool { return false; };
+      }
+    }
   };
 
 }  // namespace opossum
