@@ -29,8 +29,7 @@ void Table::add_column_definition(const std::string& name, const std::string& ty
 }
 
 void Table::add_column(const std::string& name, const std::string& type) {
-  _column_names.push_back(name);
-  _column_types.push_back(type);
+  add_column_definition(name, type);
   _chunks.back().add_segment(make_shared_by_data_type<BaseSegment, ValueSegment>(type));
 }
 
@@ -89,7 +88,7 @@ void Table::_add_chunk() {
   for (auto const& type : _column_types) {
     new_chunk.add_segment(make_shared_by_data_type<BaseSegment, ValueSegment>(type));
   }
-  _chunks.emplace_back(std::move(new_chunk));
+  emplace_chunk(new_chunk);
 }
 
 void Table::compress_chunk(ChunkID chunk_id) {

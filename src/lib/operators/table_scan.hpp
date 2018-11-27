@@ -142,14 +142,12 @@ class TableScan : public AbstractOperator {
       }
       // Create table structure
 
-      Chunk output_chunk;
+      Chunk &output_chunk = output_table->get_chunk(ChunkID{0});
 
       for(ColumnID column_id = ColumnID{0}; column_id < _input_table->column_count(); column_id++) {
         output_table->add_column_definition(_input_table->column_name(column_id), _input_table->column_type(column_id));
         output_chunk.add_segment(std::make_shared<ReferenceSegment>(output_reference_table, column_id, pos_list));
       }
-
-      output_table->emplace_chunk(output_chunk);
 
       return output_table;
     }
