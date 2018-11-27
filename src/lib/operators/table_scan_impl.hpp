@@ -25,6 +25,18 @@ public:
   virtual std::shared_ptr<const Table> on_execute() const = 0;
 };
 
+template <typename Compare>
+void add_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, ValueID search_pos) {
+  Compare compare = Compare();
+  for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
+    if (compare(attribute_vector->get(index), search_pos)) {
+      pos_list->emplace_back(RowID{chunk_id, index});
+    }
+  }
+}
+
+void add_all_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector);
+
 template<typename T>
   class TableScanImpl : public BaseTableScanImpl {
    public:
@@ -88,25 +100,25 @@ template<typename T>
             case ScanType::OpEquals:
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
-                _add_all_equal(pos_list, chunk_id, attribute_vector, search_pos);
+                add_to_pos_list<std::equal_to<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
               }
               break;
 
             case ScanType::OpNotEquals:
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
-                _add_all_not_equal(pos_list, chunk_id, attribute_vector, search_pos);
+                add_to_pos_list<std::not_equal_to<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
               } else {
-                _add_all(pos_list, chunk_id, attribute_vector, search_pos);
+                add_all_to_pos_list(pos_list, chunk_id, attribute_vector);
               }
               break;
 
             case ScanType::OpLessThan:
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
-                _add_all_smaller(pos_list, chunk_id, attribute_vector, search_pos);
+                add_to_pos_list<std::less<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
               } else if (dictionary->back() < _search_value) {
-                _add_all(pos_list, chunk_id, attribute_vector, search_pos);
+                add_all_to_pos_list(pos_list, chunk_id, attribute_vector);
               }
               break;
 
@@ -114,12 +126,12 @@ template<typename T>
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID) {
                 if ((*dictionary)[search_pos] == _search_value) {
-                  _add_all_smaller_equal(pos_list, chunk_id, attribute_vector, search_pos);
+                  add_to_pos_list<std::less_equal<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
                 } else {
-                  _add_all_smaller(pos_list, chunk_id, attribute_vector, search_pos);
+                  add_to_pos_list<std::less<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
                 }
               } else if (dictionary->back() < _search_value) {
-                _add_all(pos_list, chunk_id, attribute_vector, search_pos);
+                add_all_to_pos_list(pos_list, chunk_id, attribute_vector);
               }
               break;
 
@@ -128,9 +140,9 @@ template<typename T>
 
               if (search_pos != INVALID_VALUE_ID) {
                 if ((*dictionary)[search_pos] == _search_value) {
-                  _add_all_greater(pos_list, chunk_id, attribute_vector, search_pos);
+                  add_to_pos_list<std::greater<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
                 } else {
-                  _add_all_greater_equal(pos_list, chunk_id, attribute_vector, search_pos);
+                  add_to_pos_list<std::greater_equal<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
                 }
               }
               break;
@@ -141,7 +153,7 @@ template<typename T>
                 if (search_pos != ValueID{0}) {
                   search_pos--;
                 }
-                _add_all_greater_equal(pos_list, chunk_id, attribute_vector, search_pos);
+                add_to_pos_list<std::greater_equal<ValueID>>(pos_list, chunk_id, attribute_vector, search_pos);
               }
               break;
 
@@ -190,60 +202,6 @@ template<typename T>
           Fail("Unreconized ScanType");
           // compiler complains that nothing is returned otherwise
           return [=](const T& value) -> bool { return false; };
-      }
-    }
-
-    void _add_all(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
-      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-        pos_list->emplace_back(RowID{chunk_id, index});
-      }
-    }
-
-    void _add_all_equal(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
-      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-        if (attribute_vector->get(index) == search_pos) {
-          pos_list->emplace_back(RowID{chunk_id, index});
-        }
-      }
-    }
-
-    void _add_all_not_equal(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
-      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-        if (attribute_vector->get(index) != search_pos) {
-          pos_list->emplace_back(RowID{chunk_id, index});
-        }
-      }
-    }
-
-    void _add_all_smaller(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
-      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-        if (attribute_vector->get(index) < search_pos) {
-          pos_list->emplace_back(RowID{chunk_id, index});
-        }
-      }
-    }
-
-    void _add_all_smaller_equal(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
-      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-        if (attribute_vector->get(index) <= search_pos) {
-          pos_list->emplace_back(RowID{chunk_id, index});
-        }
-      }
-    }
-
-    void _add_all_greater(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
-      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-        if (attribute_vector->get(index) > search_pos) {
-          pos_list->emplace_back(RowID{chunk_id, index});
-        }
-      }
-    }
-
-    void _add_all_greater_equal(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
-      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-        if (attribute_vector->get(index) >= search_pos) {
-          pos_list->emplace_back(RowID{chunk_id, index});
-        }
       }
     }
   };
