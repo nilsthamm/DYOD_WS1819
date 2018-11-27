@@ -50,7 +50,7 @@ class Table : private Noncopyable {
   const Chunk& get_chunk(ChunkID chunk_id) const;
 
   // Adds a chunk to the table. If the first chunk is empty, it is replaced.
-  void emplace_chunk(Chunk chunk);
+  void emplace_chunk(Chunk& chunk);
 
   // Returns a list of all column names.
   const std::vector<std::string>& column_names() const;
@@ -91,7 +91,7 @@ class Table : private Noncopyable {
 
  protected:
   uint32_t _chunk_size;
-  std::vector<std::shared_ptr<Chunk>> _chunks;
+  std::vector<Chunk> _chunks;
   std::vector<std::string> _column_names;
   std::vector<std::string> _column_types;
 
