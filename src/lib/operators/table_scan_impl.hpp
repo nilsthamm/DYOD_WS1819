@@ -25,6 +25,8 @@ public:
   virtual std::shared_ptr<const Table> on_execute() const = 0;
 };
 
+// Add all ValueIDs of an DictionarySegment's attribute vector that fulfill a specific condition (templated Comparator)
+// with the given search_pos to a PosList
 template <typename Compare>
 void add_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, ValueID search_pos) {
   Compare compare = Compare();
@@ -35,6 +37,7 @@ void add_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const 
   }
 }
 
+// Add all ValueIDs of an DictionarySegment's attribute vector to a PosList
 void add_all_to_pos_list(std::shared_ptr<PosList> pos_list, ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector);
 
 template<typename T>
