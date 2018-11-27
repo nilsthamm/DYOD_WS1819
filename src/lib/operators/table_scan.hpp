@@ -127,91 +127,51 @@ class TableScan : public AbstractOperator {
           ValueID search_pos;
           switch ( _scan_type ) {
             case ScanType::OpEquals:
-              std::cout << "ScanType::OpEquals: " << std::endl;
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
-                for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                  if (attribute_vector->get(index) == search_pos) {
-                    pos_list->emplace_back(RowID{chunk_id, index});
-                  }
-                }
+                add_all_equal(pos_list, chunk_id, attribute_vector, search_pos);
               }
               break;
 
             case ScanType::OpNotEquals:
-              std::cout << "ScanType::OpNotEquals: " << std::endl;
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
-                for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                  if (attribute_vector->get(index) != search_pos) {
-                    pos_list->emplace_back(RowID{chunk_id, index});
-                  }
-                }
+                add_all_not_equal(pos_list, chunk_id, attribute_vector, search_pos);
               } else {
-                // pos_list.reserve
-                for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                  pos_list->emplace_back(RowID{chunk_id, index});
-                }
+                add_all(pos_list, chunk_id, attribute_vector, search_pos);
               }
               break;
 
             case ScanType::OpLessThan:
-              std::cout << "ScanType::OpLessThan: " << std::endl;
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID && (*dictionary)[search_pos] == _search_value) {
-                for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                  if (attribute_vector->get(index) < search_pos) {
-                    pos_list->emplace_back(RowID{chunk_id, index});
-                  }
-                }
+                add_all_smaller(pos_list, chunk_id, attribute_vector, search_pos);
               } else if (dictionary->back() < _search_value) {
-                for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                  pos_list->emplace_back(RowID{chunk_id, index});
-                }
+                add_all(pos_list, chunk_id, attribute_vector, search_pos);
               }
               break;
 
             case ScanType::OpLessThanEquals:
-              std::cout << "ScanType::OpLessThanEquals: " << std::endl;
               search_pos = dictionary_segment->lower_bound(_search_value);
               if (search_pos != INVALID_VALUE_ID) {
                 if ((*dictionary)[search_pos] == _search_value) {
-                  for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                    if (attribute_vector->get(index) <= search_pos) {
-                      pos_list->emplace_back(RowID{chunk_id, index});
-                    }
-                  }
+                  add_all_smaller_equal(pos_list, chunk_id, attribute_vector, search_pos);
                 } else {
-                  for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                    if (attribute_vector->get(index) < search_pos) {
-                      pos_list->emplace_back(RowID{chunk_id, index});
-                    }
-                  }
+                  add_all_smaller(pos_list, chunk_id, attribute_vector, search_pos);
                 }
               } else if (dictionary->back() < _search_value) {
-                for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                  pos_list->emplace_back(RowID{chunk_id, index});
-                }
+                add_all(pos_list, chunk_id, attribute_vector, search_pos);
               }
               break;
 
             case ScanType::OpGreaterThan:
-              std::cout << "ScanType::OpGreaterThan: " << std::endl;
               search_pos = dictionary_segment->upper_bound(_search_value);
 
               if (search_pos != INVALID_VALUE_ID) {
                 if ((*dictionary)[search_pos] == _search_value) {
-                  for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                    if (attribute_vector->get(index) > search_pos) {
-                      pos_list->emplace_back(RowID{chunk_id, index});
-                    }
-                  }
+                  add_all_greater(pos_list, chunk_id, attribute_vector, search_pos);
                 } else {
-                  for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                    if (attribute_vector->get(index) >= search_pos) {
-                      pos_list->emplace_back(RowID{chunk_id, index});
-                    }
-                  }
+                  add_all_greater_equal(pos_list, chunk_id, attribute_vector, search_pos);
                 }
               }
               break;
@@ -222,11 +182,7 @@ class TableScan : public AbstractOperator {
                 if (search_pos != ValueID{0}) {
                   search_pos--;
                 }
-                for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
-                  if (attribute_vector->get(index) >= search_pos) {
-                    pos_list->emplace_back(RowID{chunk_id, index});
-                  }
-                }
+                add_all_greater_equal(pos_list, chunk_id, attribute_vector, search_pos);
               }
               break;
 
@@ -255,8 +211,60 @@ class TableScan : public AbstractOperator {
     T _search_value;
     std::shared_ptr<const Table> _input_table;
 
-  };
+    void add_all(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
+      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
+        pos_list->emplace_back(RowID{chunk_id, index});
+      }
+    }
 
+    void add_all_equal(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
+      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
+        if (attribute_vector->get(index) == search_pos) {
+          pos_list->emplace_back(RowID{chunk_id, index});
+        }
+      }
+    }
+
+    void add_all_not_equal(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
+      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
+        if (attribute_vector->get(index) != search_pos) {
+          pos_list->emplace_back(RowID{chunk_id, index});
+        }
+      }
+    }
+
+    void add_all_smaller(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
+      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
+        if (attribute_vector->get(index) < search_pos) {
+          pos_list->emplace_back(RowID{chunk_id, index});
+        }
+      }
+    }
+
+    void add_all_smaller_equal(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
+      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
+        if (attribute_vector->get(index) <= search_pos) {
+          pos_list->emplace_back(RowID{chunk_id, index});
+        }
+      }
+    }
+
+    void add_all_greater(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
+      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
+        if (attribute_vector->get(index) > search_pos) {
+          pos_list->emplace_back(RowID{chunk_id, index});
+        }
+      }
+    }
+
+    void add_all_greater_equal(std::shared_ptr<PosList> pos_list, const ChunkID chunk_id, const std::shared_ptr<const BaseAttributeVector> attribute_vector, const ValueID search_pos) const {
+      for (ChunkOffset index = 0; index < attribute_vector->size(); ++index) {
+        if (attribute_vector->get(index) >= search_pos) {
+          pos_list->emplace_back(RowID{chunk_id, index});
+        }
+      }
+    }
+  };
 };
 
 }  // namespace opossum
