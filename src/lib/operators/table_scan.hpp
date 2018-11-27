@@ -13,8 +13,8 @@
 #include "storage/reference_segment.hpp"
 #include "storage/table.hpp"
 #include "table_scan_impl.hpp"
-#include "types.hpp"
 #include "type_cast.hpp"
+#include "types.hpp"
 #include "utils/assert.hpp"
 
 namespace opossum {
