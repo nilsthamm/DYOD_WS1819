@@ -76,33 +76,30 @@ template<typename T>
               pos_list->emplace_back(RowID{chunk_id, index});
             }
           }
-        }
-
         // Scan reference segment
-          if(auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(chunk.get_segment(_column_id))) {
-            // set the reference table for the output segments to the original source table
-            output_reference_table = reference_segment->referenced_table();
-            const auto referenced_pos_list = reference_segment->pos_list();
-            const auto reference_table = reference_segment->referenced_table();
+        } else if (auto reference_segment = std::dynamic_pointer_cast<ReferenceSegment>(chunk.get_segment(_column_id))) {
+          // set the reference table for the output segments to the original source table
+          output_reference_table = reference_segment->referenced_table();
+          const auto referenced_pos_list = reference_segment->pos_list();
+          const auto reference_table = reference_segment->referenced_table();
 
-            for (uint32_t index = 0; index < referenced_pos_list->size(); index++) {
-              const auto& row_id = (*referenced_pos_list)[index];
-              // Depending on the source segment type we need to get the value on different ways
-              if(auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(reference_table->get_chunk(row_id.chunk_id).get_segment(_column_id))) {
-                if(compare(value_segment->values()[row_id.chunk_offset])) {
-                  pos_list->emplace_back(row_id);
-                }
-              } else if(auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<T>>(reference_table->get_chunk(row_id.chunk_id).get_segment(_column_id))) {
-                if(compare(dictionary_segment->get(row_id.chunk_offset))) {
-                  pos_list->emplace_back(row_id);
-                }
-              } else {
-                Fail("Column type could not be reconized");
+          for (uint32_t index = 0; index < referenced_pos_list->size(); index++) {
+            const auto& row_id = (*referenced_pos_list)[index];
+            // Depending on the source segment type we need to get the value on different ways
+            if(auto value_segment = std::dynamic_pointer_cast<ValueSegment<T>>(reference_table->get_chunk(row_id.chunk_id).get_segment(_column_id))) {
+              if(compare(value_segment->values()[row_id.chunk_offset])) {
+                pos_list->emplace_back(row_id);
               }
+            } else if(auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<T>>(reference_table->get_chunk(row_id.chunk_id).get_segment(_column_id))) {
+              if(compare(dictionary_segment->get(row_id.chunk_offset))) {
+                pos_list->emplace_back(row_id);
+              }
+            } else {
+              Fail("Column type could not be reconized");
             }
           }
         // Scan dictionary segment
-        if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<T>>(chunk.get_segment(_column_id))) {
+        } else if (const auto dictionary_segment = std::dynamic_pointer_cast<DictionarySegment<T>>(chunk.get_segment(_column_id))) {
 
           const auto& dictionary = dictionary_segment->dictionary();
           const auto& attribute_vector = dictionary_segment->attribute_vector();
